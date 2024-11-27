@@ -2,14 +2,14 @@ from pikepdf import Pdf
 import argparse
 import re
 
-def crack_password(digits, filename, pattern):
+def crack_password(digits, filename, pattern, prefix=''):
     n = 1
     n_max = 9999999999999999999 % (10**digits)
     while n < n_max + 1:
-        pn = str(n).zfill(digits)
+        pn = prefix + str(n).zfill(digits)  # Add prefix to the password
         if pattern is None or pattern.match(pn):
             try:
-                Pdf.open(filename_or_stream = filename, password = pn)
+                Pdf.open(filename_or_stream=filename, password=pn)
                 print("Password is " + pn)
                 return True
             except:
@@ -24,6 +24,7 @@ parser.add_argument('filename', help="Full path of the PDF file")
 parser.add_argument('-m', '--min-digits', help="Minimum digits in the password", type=int, default="1")
 parser.add_argument('-n', '--max-digits', help="Maximum digits in the password", type=int, default="-1")
 parser.add_argument('-r', '--matching-regex', help="Skip passwords not matching regex", type=str, default=None)
+parser.add_argument('-p', '--prefix', help="Character to add before the numeric password", type=str, default='')  # New argument
 args = parser.parse_args()
 
 # Check and fix min and max digit values
@@ -38,13 +39,17 @@ if args.matching_regex is not None:
     pattern = re.compile(args.matching_regex)
     print('Skipping passwords not matching:', args.matching_regex)
 
+# Print prefix if provided
+if args.prefix:
+    print('Using prefix:', args.prefix)
+
 # Iterate
 digits = min_digits
 found_password = False
 print("Cracking. Please wait...")
 while not found_password and digits <= max_digits:
     print("Trying to crack using " + str(digits) + " digit passwords")
-    found_password = crack_password(digits, args.filename, pattern)
+    found_password = crack_password(digits, args.filename, pattern, args.prefix)  # Pass prefix to function
     digits += 1
 if not found_password:
     print("Could not crack the password")
